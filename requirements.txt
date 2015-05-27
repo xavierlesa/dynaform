@@ -1,0 +1,3 @@
+json
+celery
+git+https://github.com/ninjaotoko/djblog
