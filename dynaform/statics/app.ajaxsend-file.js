@@ -31,7 +31,7 @@ $(function(){
             sending_event: 'sending',
             beforesend_element: this,
             beforesend_event: 'beforesend',
-            loading_img: '/statics/img/loading.gif'
+            loading_img: 'http://s11.postimg.org/lb6hylp9r/loading.gif'
         }, r);
 
         var i = new Image();

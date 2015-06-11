@@ -127,7 +127,7 @@ class DynaFormTrackingAdmin(admin.ModelAdmin):
         for data in queryset:
             csv_data = csv_data + "\t".join([u"%s" % f for f in \
                     [data.sender, data.site.name, data.pub_date.strftime("%d/%m/%Y"), "\t".join(data.get_data().values())] ]) + "\r\n"
-        response = HttpResponse(csv_data, mimetype='application/vnd.ms-excel')
+        response = HttpResponse(csv_data, content_type='application/vnd.ms-excel')
         response['Content-Disposition'] = "attachment; filename=%s-%s.xls" % (app, module) 
         return response
     export_selected.short_description = u"Export Selected"
