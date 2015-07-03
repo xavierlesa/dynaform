@@ -1,3 +1,4 @@
 include LICENSE
 include README.rst
-recursive-include dynaform/* *.html
+recursive-include dynaform/templates *.html 
+recursive-include dynaform/static *.js *.css *.scss

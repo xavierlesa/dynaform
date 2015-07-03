@@ -7,9 +7,46 @@
 
 $(function(){
 
+    // using jQuery
+    function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie != '') {
+            var cookies = document.cookie.split(';');
+            for (var i = 0; i < cookies.length; i++) {
+                var cookie = jQuery.trim(cookies[i]);
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    var csrftoken = getCookie('csrftoken');
+
+    function csrfSafeMethod(method) {
+        // these HTTP methods do not require CSRF protection
+        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+    }
+    function sameOrigin(url) {
+        // test that a given url is a same-origin URL
+        // url could be relative or scheme relative or absolute
+        var host = document.location.host; // host + port
+        var protocol = document.location.protocol;
+        var sr_origin = '//' + host;
+        var origin = protocol + sr_origin;
+        // Allow absolute or scheme relative URLs to same origin
+        return (url == origin || url.slice(0, origin.length + 1) == origin + '/') ||
+            (url == sr_origin || url.slice(0, sr_origin.length + 1) == sr_origin + '/') ||
+            // or any other URL that isn't scheme relative or absolute i.e relative.
+            !(/^(\/\/|http:|https:).*/.test(url));
+    }
+
+
     $("form[data-ajaxsend]").each(function(){
 
-        var options = $(this).attr('data-ajaxsend-options') || {};
+        var options = $(this).attr('data-ajaxsend-options') || "";
         if(options){
             options = options.split(';');
             var r = {};
@@ -85,13 +122,18 @@ $(function(){
                 dataType: 'json',
                 global: false,
                 cache: false,
-                contentType: false,
+                //contentType: false, /* bug? no termina de procesar los datos la vista de django y POST viaja vacio */
                 processData: false,
-                beforeSend: function(jqXHR){
+                beforeSend: function(jqXHR, settings){
                     $form.find('.loading').show();
                     disabled($form);
                     console.log('loading...');
                     $(options.beforesend_element).trigger(options.beforesend_event, jqXHR);
+
+                    // CSRFToken protect
+                    if (csrftoken && !csrfSafeMethod(settings.type) && sameOrigin(settings.url)) {
+                        jqXHR.setRequestHeader("X-CSRFToken", csrftoken);
+                    }
                 }
             });
 
@@ -104,6 +146,7 @@ $(function(){
 
             xhr.done(function(data, textStatus, jqXHR){
                 $(options.done_element).trigger(options.done_event, {data:data, textStatus:textStatus, jqXHR:jqXHR});
+                $form.trigger('reset'); // clean
             });
 
             xhr.fail(function(jqXHR, textStatus, errorThrown){

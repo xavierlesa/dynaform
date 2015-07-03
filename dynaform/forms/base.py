@@ -118,7 +118,7 @@ class DynaFormClassForm(forms.Form):
         self.required_css_class = object_form.required_css_class
 
         for field in object_form.get_fields():
-
+            # configura el field y widget
             try:
                 _field = getattr(dynaform_fields, field.field_type)
             except AttributeError:

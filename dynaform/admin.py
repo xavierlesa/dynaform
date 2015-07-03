@@ -3,13 +3,13 @@
 from django import forms
 from django.db import models
 from django.contrib import admin
-from django.contrib.contenttypes import generic
+from django.contrib.contenttypes.admin import GenericStackedInline
 from django.http import HttpResponse
 from models import DynaFormTracking, DynaFormField, DynaFormTemplate, DynaFormForm
 from dummy_form import DummyTextInput
 
 
-class DynaFormFieldInline(generic.GenericStackedInline):
+class DynaFormFieldInline(GenericStackedInline):
     model = DynaFormField
     ct_field = 'content_type'
     ct_fk_field = 'object_pk'
