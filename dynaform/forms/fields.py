@@ -7,7 +7,10 @@ from dynaform.forms import widgets as custom_widgets
 try:
     import ReCaptchaField
 except ImportError:
-    print 'ReCaptchaField was not loaded'
+    try:
+        from captcha.fields import ReCaptchaField
+    except ImportError:
+        print 'ReCaptchaField was not loaded'
 
 
 class CheckOtherField(forms.fields.MultiValueField):
