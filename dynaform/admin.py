@@ -93,9 +93,15 @@ class DynaFormFormAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+    actions = ['clone_form',]
 
     class Meta:
         model = DynaFormForm
+
+    def clone_form(self, request, queryset):
+        for obj in queryset:
+            obj.clone()
+    clone_form.short_description = "Clonar formulario"
 
 
 class DynaFormTrackingForm(forms.ModelForm):

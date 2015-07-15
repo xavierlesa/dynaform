@@ -144,6 +144,7 @@ class DynaFormField(GenericRelationModel):
         return qs
 
 
+
 class DynaFormTemplate(MultiSiteBaseModel):
     """
     Templates for dinamic forms for subject, body and form itself
@@ -215,3 +216,58 @@ class DynaFormForm(MultiSiteBaseModel):
     def get_absolute_url(self):
         return ('dynaform_action', (), {'slug': self.slug, 'pk': self.pk})
 
+    def clone(self):
+        """
+        Hace un clon de la instania actual
+
+        """
+        
+        # recrea la instancia del form
+        form_clone = DynaFormForm(
+                lang = self.lang,
+                name = "clon de %s" % self.name,
+                is_active = self.is_active,
+                form_title = self.form_title,
+                form_template = self.form_template,
+                send_email = self.send_email,
+                from_email = self.from_email,
+                recipient_list = self.recipient_list,
+                subject_template = self.subject_template,
+                body_template = self.body_template,
+                error_class = self.error_class,
+                required_css_class = self.required_css_class,
+                autorespond = self.autorespond,
+                autorespond_subject_template = self.autorespond_subject_template,
+                autorespond_body_template = self.autorespond_body_template,
+                autorespond_email_field = self.autorespond_email_field
+                )
+
+        form_clone.save()
+
+        content_type = ContentType.objects.get_for_model(form_clone)
+
+        # recrea todos los fields
+        for field in self.get_fields():
+
+            field_clone = DynaFormField(
+                    content_type = content_type,
+                    object_pk = form_clone.pk,
+                    field_name = field.field_name,
+                    field_label = field.field_label,
+                    field_type = field.field_type,
+                    field_widget = field.field_widget,
+                    field_help = field.field_help,
+                    is_required = field.is_required,
+                    is_hidden = field.is_hidden,
+                    default_value = field.default_value,
+                    choices = field.choices,
+                    choices_delimiter = field.choices_delimiter,
+                    choices_queryset = field.choices_queryset,
+                    choices_queryset_filter = field.choices_queryset_filter,
+                    choices_queryset_empty_label = field.choices_queryset_empty_label,
+                    choices_queryset_label = field.choices_queryset_label,
+                    choices_related_field = field.choices_related_field,
+                    field_order = field.field_order
+                    )
+
+            field_clone.save()
