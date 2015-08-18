@@ -453,7 +453,7 @@ class DynaFormClassForm(forms.Form):
         fields_in = ['captcha_0', 'captcha_1','captcha', 'csrfmiddlewaretoken', u'recaptcha_response_field']
         for key in self.cleaned_data:
             if key not in fields_in:
-                data.update({ key: json.dumps(unicode(self.cleaned_data[key])) })
+                data.update({ key: json.dumps(self.cleaned_data[key]) })
         dt = DynaFormTracking(site = Site.objects.get_current(), sender = self.object_form.name[:200])
         dt.data = json.dumps(data)
         dt.save()
