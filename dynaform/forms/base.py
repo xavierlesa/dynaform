@@ -73,6 +73,7 @@ DYNAFORM_WIDGETS = (
 ("Multiples", (
     ("CheckboxInput"             ,"CheckboxInput"),
     ("Select"                    ,"Select"),
+    ("SelectSelectedDisableFirst","SelectSelectedDisableFirst"),
     ("NullBooleanSelect"         ,"NullBooleanSelect"),
     ("SelectMultiple"            ,"SelectMultiple"),
     ("RadioSelect"               ,"RadioSelect"),
