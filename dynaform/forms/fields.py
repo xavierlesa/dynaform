@@ -10,7 +10,11 @@ except ImportError:
     try:
         from captcha.fields import ReCaptchaField
     except ImportError:
-        print 'ReCaptchaField was not loaded'
+        try: 
+            from nocaptcha_recaptcha.fields \
+                    import NoReCaptchaField as ReCaptchaField
+        except ImportError:
+            print 'ReCaptchaField was not loaded'
 
 
 class CheckOtherField(forms.fields.MultiValueField):
