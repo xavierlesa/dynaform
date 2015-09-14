@@ -94,3 +94,11 @@ class CheckOtherWidget(forms.widgets.MultiWidget):
             return json.loads(value)
         else:
             return ['', '']
+
+
+class HTML5DateWidget(TextInput):
+    input_type = "date"
+
+
+class HTML5TimeWidget(TextInput):
+    input_type = "time"
