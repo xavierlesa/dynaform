@@ -85,6 +85,8 @@ DYNAFORM_WIDGETS = (
 ("Fechas", (
     ("SplitDateTimeWidget"       ,"SplitDateTimeWidget"),
     ("SelectDateWidget"          ,"SelectDateWidget"),
+    ("HTML5DateWidget"           ,"HTML5DateWidget"),
+    ("HTML5TimeWidget"           ,"HTML5TimeWidget"),
     )
 ),
 ("Archivos/Imagenes", (

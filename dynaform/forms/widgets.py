@@ -140,3 +140,11 @@ class SelectSelectedDisableFirst(forms.widgets.Select):
             else:
                 output.append(self.render_option(selected_choices, option_value, option_label))
         return '\n'.join(output)
+
+
+class HTML5DateWidget(TextInput):
+    input_type = "date"
+
+
+class HTML5TimeWidget(TextInput):
+    input_type = "time"
