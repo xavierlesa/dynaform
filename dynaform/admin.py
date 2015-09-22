@@ -63,22 +63,25 @@ class DynaFormFormAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {
             'fields': (
-                ('name', 'slug', 'error_class', 'required_css_class'),
-                ('lang', 'site'),
+                ('name', 'slug',), 
+                ('error_class', 'required_css_class'),
+                ('form_title', 'form_template'),
                 'is_active',
             )
         }),
-        
-        ('Form Template', {
+
+        ('Advanced setting', {
             'fields': (
-                ('form_title', 'form_template'),
+                'lang', 
+                'site',
             ),
-            'classes': ('collapse',)
+            'classes': ('collapse',),
         }),
 
         ('Send Email', {
             'fields': (
-                ('send_email', 'from_email', 'recipient_list'),
+                ('send_email', 'from_email'), 
+                'recipient_list',
                 ('subject_template', 'body_template',),
             ),
             'classes': ('collapse',)
