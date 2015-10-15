@@ -109,18 +109,17 @@ class DynaFormFormAdmin(admin.ModelAdmin):
 
 class DynaFormTrackingForm(forms.ModelForm):
     data = forms.CharField(widget=DummyTextInput, required=False)
-
+    
     class Meta:
         model = DynaFormTracking
         fields = [
-                'site',
+                'site', 
                 'lang', 
                 'sender',
-                'data',
+                'data'
                 ]
 
 
-# ultra simple admin
 class DynaFormTrackingAdmin(admin.ModelAdmin):
     list_display = ('sender', 'site', 'pub_date')
     list_filter = ('sender', 'site')
@@ -129,7 +128,8 @@ class DynaFormTrackingAdmin(admin.ModelAdmin):
     form = DynaFormTrackingForm
 
     def export_selected(modeladmin, request, queryset):
-        app, module, fields = modeladmin.model._meta.app_label, modeladmin.model._meta.model_name, modeladmin.model._meta.fields
+        app, module = ("dynaform", "dynaformtracking")
+        fields = modeladmin.model._meta.fields
         fields = ['sender', 'site', 'pub_date']
         fields.extend(queryset[0].get_data().keys())
         csv_data = "\t".join([u"%s" % f for f in fields]) + "\r\n"
