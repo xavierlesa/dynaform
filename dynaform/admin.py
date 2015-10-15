@@ -129,7 +129,11 @@ class DynaFormTrackingAdmin(admin.ModelAdmin):
 
     def export_selected(modeladmin, request, queryset):
         app, module = ("dynaform", "dynaformtracking")
-        fields = modeladmin.model._meta.fields
+        try:
+            fields = queryset.model._meta.get_fields()
+        except:
+            fields = modeladmin.model._meta.fields
+
         fields = ['sender', 'site', 'pub_date']
         fields.extend(queryset[0].get_data().keys())
         csv_data = "\t".join([u"%s" % f for f in fields]) + "\r\n"
