@@ -17,14 +17,14 @@ from django.utils.encoding import force_unicode
 from django.core.mail import EmailMultiAlternatives
 from django.core.urlresolvers import reverse
 
-import logging
-logger = logging.getLogger(__name__)
-
 from dynaform.models import DynaFormTracking
 from dynaform.forms import widgets as dynaform_widgets
 from dynaform.forms import fields as dynaform_fields
 
 import requests
+
+import logging
+log = logging.getLogger(__name__)
 
 TOKEN_FORMAT = re.compile('%\((?P<field>[a-z0-9\.\_\-]+)\)s', re.U|re.I)
 
@@ -282,16 +282,17 @@ class DynaFormClassForm(forms.Form):
             geo_data = self.get_location(request)
 
             if not 'geo_data_city' in self.fields:
-                self.fields['geo_data_city'] = forms.CharField(initial=geo_data.get('geo_data_city'), required=False, widget=forms.HiddenInput)
+                self.fields['geo_data_city'] = forms.CharField(initial=geo_data.get('city'), required=False, widget=forms.HiddenInput)
 
             if not 'geo_data_country' in self.fields:
-                self.fields['geo_data_country'] = forms.CharField(initial=geo_data.get('geo_data_country'), required=False, widget=forms.HiddenInput)
+                self.fields['geo_data_country'] = forms.CharField(initial=geo_data.get('country'), required=False, widget=forms.HiddenInput)
 
             if not 'geo_data_lat' in self.fields:
-                self.fields['geo_data_lat'] = forms.CharField(initial=geo_data.get('geo_data_lat'), required=False, widget=forms.HiddenInput)
+                self.fields['geo_data_lat'] = forms.CharField(initial=geo_data.get('lat'), required=False, widget=forms.HiddenInput)
 
-            if not 'geo_data_lng' in self.fields:
-                self.fields['geo_data_lng'] = forms.CharField(initial=geo_data.get('geo_data_lng'), required=False, widget=forms.HiddenInput)
+            if not 'geo_data_lon' in self.fields:
+                self.fields['geo_data_lon'] = forms.CharField(initial=geo_data.get('lon'), required=False, widget=forms.HiddenInput)
+
 
         self.object_form = object_form
         self.request = request
@@ -457,7 +458,7 @@ class DynaFormClassForm(forms.Form):
                     msg.attach_file(attach['content'], attach['mimetype'])
 
             msg.send()
-            logger.info("Email sent")
+            log.info("Email sent")
 
         ######################################################################
         # Nuevo, envia autorespondedor
@@ -476,12 +477,12 @@ class DynaFormClassForm(forms.Form):
             else:
                 msg = EmailMultiAlternatives(subject, escape(body), self.object_form.from_email, [email_to,], get_recipient_list([]), alternatives=[(body, "text/html"),])
             msg.send()
-            logger.info("Email autorespond sent")
+            log.info("Email autorespond sent")
 
 
         def sanitize(val):
             val = unicode(val)
-            return val.replace('"', '').replace('\'','')
+            return val.replace('\"', '').replace('\'','').replace('"','')
 
         # GEO IP
         geo_data = self.get_location(self.request)
@@ -495,6 +496,42 @@ class DynaFormClassForm(forms.Form):
         dt.data = json.dumps(data)
         dt.save()
         self.dt = dt # guardo la instancia de DynaFormTracking para luego poder recuperarla.
+
+        # Envia los datos a TotemLead
+        extra_data = {'geo_data': geo_data}
+        for key in self.cleaned_data:
+            if key not in fields_in:
+                extra_data.update({
+                    key: sanitize(self.cleaned_data[key])
+                    })
+        qs = {
+                'email': self.cleaned_data.get('email') or \
+                        self.cleaned_data.get('mail') or \
+                        self.cleaned_data.get('first_name'), # requerido
+                'first_name': self.cleaned_data.get('first_name') or \
+                        self.cleaned_data.get('nombre') or \
+                        self.cleaned_data.get('nombre_apellido'),
+                'last_name': self.cleaned_data.get('last_name') or \
+                        self.cleaned_data.get('apellido') or \
+                        self.cleaned_data.get('nombre_apellido'),
+                'home_phone': self.cleaned_data.get('home_phone') or \
+                        self.cleaned_data.get('phone') or \
+                        self.cleaned_data.get('telefono'),
+                'cell_phone': self.cleaned_data.get('cell_phone') or \
+                        self.cleaned_data.get('mobile') or \
+                        self.cleaned_data.get('celular') or \
+                        self.cleaned_data.get('telefono_celular'),
+                'city': geo_data.get('city'),
+                'extra': extra_data,
+                'location': {
+                    'latitude': geo_data.get('lat'), 
+                    'longitude': geo_data.get('lon')
+                    }
+            }
+
+        response = self.feed_totemlead(self.object_form.name[:200], [qs])
+        log.debug("feed_totemlead response")
+        log.debug(response)
 
 
     def get_client_ip(self, request):
@@ -518,3 +555,34 @@ class DynaFormClassForm(forms.Form):
             return data.json()
 
         return {}
+
+
+    def feed_totemlead(self, mailgroup, qs):
+        api_endpoint = "http://totemlead.com/api/feed/"
+
+        data = []
+
+        for obj in qs:
+            data.append({
+                'email': obj.get('email'), # requerido
+                'first_name': obj.get('first_name'),
+                'last_name': obj.get('last_name'),
+                'home_phone': obj.get('home_phone'),
+                'cell_phone': obj.get('cell_phone'),
+                'city': obj.get('city'),
+                'extra': obj.get('extra'),
+                'location': obj.get('location')
+                    #{
+                    #'latitude': obj.get('latitude'), 
+                    #'longitude': obj.get('longitude')
+                    #}
+                })
+
+        payload = json.dumps({
+            'source': 'landinator', 
+            'mailgroup': mailgroup, 
+            'data': data
+            })
+        
+        response = requests.post(api_endpoint, data=payload)
+        return response.text
