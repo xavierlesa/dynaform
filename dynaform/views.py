@@ -13,7 +13,7 @@ from django.http import HttpResponseRedirect, Http404, HttpResponse, \
         HttpResponseBadRequest
 from django.views.generic.detail import SingleObjectMixin
 from django.views.generic.base import View
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 
 from dynaform.models import DynaFormForm, DynaFormField
 from dynaform.forms.base import DynaFormClassForm
@@ -82,6 +82,7 @@ class DynaformMixin(object):
 
         return superClass.dispatch(request, *args, **kwargs)
 
+    @ensure_csrf_cookie
     def dispatch(self, *args, **kwargs):
         original = super(DynaformMixin, self)
         if self.disable_csrf:
