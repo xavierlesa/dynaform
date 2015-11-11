@@ -7,6 +7,11 @@ from django.contrib.sites.models import Site
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from django.core.serializers.json import DjangoJSONEncoder
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.template.defaultfilters import slugify 
+#from djblog.common.models import MultiSiteBaseModel, GenericRelationModel
+from dynaform.forms.base import DYNAFORM_FIELDS, DYNAFORM_WIDGETS
 
 try:
     import json
@@ -54,6 +59,67 @@ class JsonField(models.Field):
 
 
 
+class MultiSiteBaseManager(models.Manager):
+    def get_queryset(self, *args, **kwargs):
+        """
+        Registros para el site actual o sin site 
+        """
+        qs = super(MultiSiteBaseManager, self).get_queryset(*args, **kwargs)
+        qs = qs.filter(models.Q(site__id__in=[settings.SITE_ID,]) | models.Q(site__isnull=True))
+        return qs
+
+    def get_for_lang(self, *args, **kwargs):
+        """
+        Registros para el idioma actual o sin idioma
+        """
+        qs = self.get_queryset(*args, **kwargs)
+        if 'django.middleware.locale.LocaleMiddleware' in getattr(settings, 'MIDDLEWARE_CLASSES', []):
+            return qs.filter(models.Q(lang__iexact=translation.get_language()) | models.Q(lang__exact=''))
+        else:
+            logger.warning('NO get for lang %s', translation.get_language())
+        return qs
+
+    def get_for_site_or_none(self, *args, **kwargs):
+        """
+        Registros para el site actual 
+        """
+        qs = super(MultiSiteBaseManager, self).get_queryset(*args, **kwargs)
+        return qs.filter(site__id__in=[settings.SITE_ID,])
+
+
+class MultiSiteBaseManagerAdmin(models.Manager):
+    pass
+
+
+class MultiSiteBaseModel(models.Model):
+    """
+    Base para Multi Site y Lang
+    """
+    lang = models.CharField(max_length=20, blank=True, choices=settings.LANGUAGES) 
+    site = models.ManyToManyField(Site, blank=True, null=True, related_name="%(app_label)s_%(class)s_related")
+
+    # el primero es el que luego es llamado con _default_manager
+    objects_for_admin = MultiSiteBaseManagerAdmin()
+    objects = MultiSiteBaseManager()
+
+    class Meta:
+        abstract = True
+
+
+class GenericRelationModel(models.Model):
+    content_type = models.ForeignKey(ContentType, blank=True, null=True, verbose_name=_('content type'), related_name="content_type_set_for_%(class)s")
+    object_pk = models.PositiveIntegerField(_('object PK'), blank=True, null=True)
+    content_object = GenericForeignKey(ct_field="content_type", fk_field="object_pk")
+
+    objects = GenericRelationManager()
+
+    def __unicode__(self):
+        return u"%s" % self.content_object
+
+    class Meta:
+        abstract = True
+
+
 class DynaFormTracking(models.Model):
     pub_date = models.DateTimeField(auto_now=True, verbose_name=_(u"Fecha de creación"))
     site = models.ForeignKey(Site)
@@ -80,11 +146,6 @@ class DynaFormTracking(models.Model):
 ################################################################################
 # Base Model DynaForm
 ################################################################################
-from django.template.defaultfilters import slugify 
-from django.contrib.contenttypes.models import ContentType
-from djblog.common.models import MultiSiteBaseModel, GenericRelationModel
-from dynaform.forms.base import DYNAFORM_FIELDS, DYNAFORM_WIDGETS
-
 
 class DynaFormField(GenericRelationModel):
     field_name = models.SlugField(_(u"Identificador del Campo"), max_length=200, help_text=_(u"nombre del campo solo letras minúsculas, guinobajo y numeros "))
