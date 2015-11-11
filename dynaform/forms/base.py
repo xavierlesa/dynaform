@@ -24,6 +24,8 @@ from dynaform.models import DynaFormTracking
 from dynaform.forms import widgets as dynaform_widgets
 from dynaform.forms import fields as dynaform_fields
 
+import requests
+
 TOKEN_FORMAT = re.compile('%\((?P<field>[a-z0-9\.\_\-]+)\)s', re.U|re.I)
 
 # siempre copio a los managers en los mails
@@ -245,6 +247,7 @@ class DynaFormClassForm(forms.Form):
 
 
         if 'instance' not in kwargs:
+            # resuelve el content type y object pk
             if context.get('object'):
                 _ct = Template("{% load dynaform_tags %}{{ object|get_ct_pk }}")
                 _ct_val = _ct.render(context)
@@ -265,6 +268,30 @@ class DynaFormClassForm(forms.Form):
             
             if not '_obj_pk' in self.fields:
                 self.fields['_obj_pk'] = forms.IntegerField(initial=_pk_val, required=False, widget=forms.HiddenInput)
+
+            if not '_obj_pk' in self.fields:
+                self.fields['_obj_pk'] = forms.IntegerField(initial=_pk_val, required=False, widget=forms.HiddenInput)
+
+            # variables de seguimiento
+            if not 'utm_source' in self.fields:
+                self.fields['utm_source'] = forms.CharField(initial=request.GET.get('utm_source'), required=False, widget=forms.HiddenInput)
+
+            if not 'utm_medium' in self.fields:
+                self.fields['utm_medium'] = forms.CharField(initial=request.GET.get('utm_medium'), required=False, widget=forms.HiddenInput)
+
+            geo_data = self.get_location(request)
+
+            if not 'geo_data_city' in self.fields:
+                self.fields['geo_data_city'] = forms.CharField(initial=geo_data.get('geo_data_city'), required=False, widget=forms.HiddenInput)
+
+            if not 'geo_data_country' in self.fields:
+                self.fields['geo_data_country'] = forms.CharField(initial=geo_data.get('geo_data_country'), required=False, widget=forms.HiddenInput)
+
+            if not 'geo_data_lat' in self.fields:
+                self.fields['geo_data_lat'] = forms.CharField(initial=geo_data.get('geo_data_lat'), required=False, widget=forms.HiddenInput)
+
+            if not 'geo_data_lng' in self.fields:
+                self.fields['geo_data_lng'] = forms.CharField(initial=geo_data.get('geo_data_lng'), required=False, widget=forms.HiddenInput)
 
         self.object_form = object_form
         self.request = request
@@ -452,12 +479,42 @@ class DynaFormClassForm(forms.Form):
             logger.info("Email autorespond sent")
 
 
-        data = {}
+        def sanitize(val):
+            val = unicode(val)
+            return val.replace('"', '').replace('\'','')
+
+        # GEO IP
+        geo_data = self.get_location(self.request)
+
+        data = {'geo_data': geo_data}
         fields_in = ['captcha_0', 'captcha_1','captcha', 'csrfmiddlewaretoken', u'recaptcha_response_field']
         for key in self.cleaned_data:
             if key not in fields_in:
-                data.update({ key: unicode(self.cleaned_data[key]) })
+                data.update({ key: json.dumps(sanitize(self.cleaned_data[key])) })
         dt = DynaFormTracking(site = Site.objects.get_current(), sender = self.object_form.name[:200])
         dt.data = json.dumps(data)
         dt.save()
         self.dt = dt # guardo la instancia de DynaFormTracking para luego poder recuperarla.
+
+
+    def get_client_ip(self, request):
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        x_real_ip = request.META.get('HTTP_X_REAL_IP')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        elif x_real_ip:
+            ip = x_real_ip.split(',')[0]
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip
+
+
+    def get_location(self, request):
+
+        ip = self.get_client_ip(request)
+        data = requests.get('http://ip-api.com/json/' + ip)
+
+        if data.status_code == requests.status_codes.codes.OK:
+            return data.json()
+
+        return {}
