@@ -10,8 +10,9 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.template.defaultfilters import slugify 
+from django.utils.encoding import force_unicode
 #from djblog.common.models import MultiSiteBaseModel, GenericRelationModel
-from dynaform.forms.base import DYNAFORM_FIELDS, DYNAFORM_WIDGETS
+from dynaform.forms.widgets import DYNAFORM_FIELDS, DYNAFORM_WIDGETS
 
 try:
     import json
@@ -56,7 +57,6 @@ class JsonField(models.Field):
             value = value.getvalue()
             value = json.load(value)
         return value
-
 
 
 class MultiSiteBaseManager(models.Manager):
@@ -105,6 +105,17 @@ class MultiSiteBaseModel(models.Model):
     class Meta:
         abstract = True
 
+
+class GenericRelationManager(models.Manager):
+    def for_model(self, model):
+        """
+        Para el modelo en particular y/o su instancia o clase 
+        """
+        ct = ContentType.objects.get_for_model(model)
+        qs = self.get_queryset().filter(content_type=ct)
+        if isinstance(model, models.Model):
+            qs = qs.filter(object_pk=force_unicode(model._get_pk_val()))
+        return qs
 
 class GenericRelationModel(models.Model):
     content_type = models.ForeignKey(ContentType, blank=True, null=True, verbose_name=_('content type'), related_name="content_type_set_for_%(class)s")

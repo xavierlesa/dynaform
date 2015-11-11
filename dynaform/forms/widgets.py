@@ -148,3 +148,73 @@ class HTML5DateWidget(TextInput):
 
 class HTML5TimeWidget(TextInput):
     input_type = "time"
+
+
+
+DYNAFORM_FIELDS = (
+    ("BooleanField",        "BooleanField"),
+    ("CharField",           "CharField"),
+    ("ChoiceField",         "ChoiceField"),
+    ("DateField",           "DateField"),
+    ("DateTimeField",       "DateTimeField"),
+    ("DecimalField",        "DecimalField"),
+    ("EmailField",          "EmailField"),
+    ("FileField",           "FileField"),
+    ("FloatField",          "FloatField"),
+    ("ImageField",          "ImageField"),
+    ("IntegerField",        "IntegerField"),
+    ("RegexField",          "RegexField"),
+    ("SlugField",           "SlugField"),
+    ("TimeField",           "TimeField"),
+    ("URLField",            "URLField"),
+    ("NullBooleanField",    "NullBooleanField"),
+    ("MultipleChoiceField", "MultipleChoiceField"),
+    ("ModelChoiceField",    "ModelChoiceField"),
+    ("ModelMultipleChoiceField",    "ModelMultipleChoiceField"),
+    ("ReCaptchaField",      "ReCaptchaField"),
+)
+
+DYNAFORM_WIDGETS = (
+("Simple", (
+    ("TextInput"                 ,"TextInput"),
+    ("PasswordInput"             ,"PasswordInput"),
+    ("HiddenInput"               ,"HiddenInput"),
+    ("DateInput"                 ,"DateInput"),
+    ("DateTimeInput"             ,"DateTimeInput"),
+    ("TimeInput"                 ,"TimeInput"),
+    ("Textarea"                  ,"Textarea"),
+    )
+),
+("Multiples", (
+    ("CheckboxInput"             ,"CheckboxInput"),
+    ("Select"                    ,"Select"),
+    ("SelectSelectedDisableFirst","SelectSelectedDisableFirst"),
+    ("NullBooleanSelect"         ,"NullBooleanSelect"),
+    ("SelectMultiple"            ,"SelectMultiple"),
+    ("RadioSelect"               ,"RadioSelect"),
+    ("CheckboxSelectMultiple"    ,"CheckboxSelectMultiple"),
+#    ("ModelChoiceField"          ,"ModelChoiceField"),
+#    ("ModelMultipleChoiceField"  ,"ModelMultipleChoiceField"),
+    )
+),
+("Fechas", (
+    ("SplitDateTimeWidget"       ,"SplitDateTimeWidget"),
+    ("SelectDateWidget"          ,"SelectDateWidget"),
+    ("HTML5DateWidget"           ,"HTML5DateWidget"),
+    ("HTML5TimeWidget"           ,"HTML5TimeWidget"),
+    )
+),
+("Archivos/Imagenes", (
+    ("FileInput", "FileInput"), 
+    ("ClearableFileInput", "ClearableFileInput"), 
+    )
+),
+("Foundation", (
+    ("FoundationRadioSelectWidget", "FoundationRadioSelectWidget"),
+    ("FoundationCheckboxSelectMultipleWidget", "FoundationCheckboxSelectMultipleWidget"),
+    ("FoundationURLWidget", "FoundationURLWidget"),
+    ("FoundationImageWidget", "FoundationImageWidget"),
+    ("FoundationThumbnailWidget", "FoundationThumbnailWidget"),
+    )
+),
+)
