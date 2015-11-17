@@ -14,7 +14,7 @@ from django.template.defaultfilters import slugify
 from django.utils.encoding import force_unicode
 #from djblog.common.models import MultiSiteBaseModel, GenericRelationModel
 from dynaform.forms.widgets import DYNAFORM_FIELDS, DYNAFORM_WIDGETS
-from django.contrib.postgres.fields import HStoreField
+#from django.contrib.postgres.fields import HStoreField
 
 try:
     import json
@@ -138,8 +138,8 @@ class DynaFormTracking(models.Model):
     site = models.ForeignKey(Site)
     lang = models.CharField(max_length=20, choices=settings.LANGUAGES, default=settings.LANGUAGE_CODE.lower())
     sender = models.CharField(max_length=200)
-    #data = JsonField()
-    data = HStoreField()
+    data = JsonField()
+    #data = HStoreField()
     
 
     def __unicode__(self, *args, **kwargs):
