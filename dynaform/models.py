@@ -5,6 +5,7 @@ from django.db import models
 from django import forms
 from django.contrib.sites.models import Site
 from django.conf import settings
+from django.utils import translation
 from django.utils.translation import ugettext_lazy as _
 from django.core.serializers.json import DjangoJSONEncoder
 from django.contrib.contenttypes.models import ContentType
@@ -13,6 +14,7 @@ from django.template.defaultfilters import slugify
 from django.utils.encoding import force_unicode
 #from djblog.common.models import MultiSiteBaseModel, GenericRelationModel
 from dynaform.forms.widgets import DYNAFORM_FIELDS, DYNAFORM_WIDGETS
+from django.contrib.postgres.fields import HStoreField
 
 try:
     import json
@@ -136,7 +138,9 @@ class DynaFormTracking(models.Model):
     site = models.ForeignKey(Site)
     lang = models.CharField(max_length=20, choices=settings.LANGUAGES, default=settings.LANGUAGE_CODE.lower())
     sender = models.CharField(max_length=200)
-    data = JsonField()
+    #data = JsonField()
+    data = HStoreField()
+    
 
     def __unicode__(self, *args, **kwargs):
         return u"%s %s" % (self.pub_date, self.sender)

@@ -82,7 +82,7 @@ class DynaformMixin(object):
 
         return superClass.dispatch(request, *args, **kwargs)
 
-    @ensure_csrf_cookie
+    #@ensure_csrf_cookie
     def dispatch(self, *args, **kwargs):
         original = super(DynaformMixin, self)
         if self.disable_csrf:
