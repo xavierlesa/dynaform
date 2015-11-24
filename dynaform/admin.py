@@ -13,7 +13,7 @@ class JSON2CSV(object):
 
     def safe_replace(sefl, val):
         if isinstance(val, basestring):
-            return val.replace('"', '')
+            return val.replace('"', '').encode('utf-8')
         return val
 
     def to_flat_json(self, row):
