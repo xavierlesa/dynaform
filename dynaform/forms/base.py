@@ -481,7 +481,7 @@ class DynaFormClassForm(forms.Form):
     def get_location(self, request):
         try:
             ip = self.get_client_ip(request)
-            data = requests.get('http://ip-api.com/json/' + ip)
+            data = requests.get('http://ip-api.com/json/' + ip, timeout=0.5)
 
             if data.status_code == requests.status_codes.codes.OK:
                 return data.json()
