@@ -12,7 +12,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.template.defaultfilters import slugify 
 from django.utils.encoding import force_unicode
-from djblog.common.models import MultiSiteBaseModel, GenericRelationModel
+#from djblog.common.models import MultiSiteBaseModel, GenericRelationModel
 from dynaform.forms.widgets import DYNAFORM_FIELDS, DYNAFORM_WIDGETS
 from django.contrib.postgres.fields import HStoreField
 
