@@ -211,6 +211,9 @@ class DynaFormClassForm(forms.Form):
             if not 'utm_medium' in self.fields:
                 self.fields['utm_medium'] = forms.CharField(initial=request.GET.get('utm_medium'), required=False, widget=forms.HiddenInput)
 
+            if not 'utm_campaign' in self.fields:
+                self.fields['utm_campaign'] = forms.CharField(initial=request.GET.get('utm_campaign'), required=False, widget=forms.HiddenInput)
+
             geo_data = self.get_location(request)
 
             if not 'geo_data_city' in self.fields:
@@ -420,11 +423,19 @@ class DynaFormClassForm(forms.Form):
         geo_data = self.get_location(self.request)
 
         data = {'geo_data': geo_data}
-        fields_in = ['captcha_0', 'captcha_1','captcha', 'csrfmiddlewaretoken', u'recaptcha_response_field']
+        fields_in = ['captcha_0', 'captcha_1','captcha', 'csrfmiddlewaretoken', 
+                u'recaptcha_response_field', 'utm_source', 'utm_medium', 'utm_campaign']
         for key in self.cleaned_data:
             if key not in fields_in:
                 data.update({ key: json.dumps(sanitize(self.cleaned_data[key])) })
-        dt = DynaFormTracking(site = Site.objects.get_current(), sender = self.object_form.name[:200])
+        dt = DynaFormTracking(
+                site=Site.objects.get_current(), 
+                sender=self.object_form.name[:200],
+                utm_source=self.cleaned_data['utm_source'], 
+                utm_medium=self.cleaned_data['utm_medium'], 
+                utm_campaign=self.cleaned_data['utm_campaign'],
+                object_form=self.object_form
+                )
         dt.data = json.dumps(data)
         dt.save()
         self.dt = dt # guardo la instancia de DynaFormTracking para luego poder recuperarla.

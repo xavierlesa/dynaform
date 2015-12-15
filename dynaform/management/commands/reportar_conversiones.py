@@ -7,10 +7,14 @@ from django.core.management.base import BaseCommand, CommandError
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
 from django.db import models
-from dynaform.models import DynaFormTracking
+from dynaform.models import DynaFormTracking, DynaFormForm
 from django.core.mail import EmailMultiAlternatives
 import logging
 log = logging.getLogger(__name__)
+
+
+# requiere instalar dependencias
+# numpy y matplotlib
 
 
 class Command(BaseCommand):
@@ -44,8 +48,84 @@ class Command(BaseCommand):
 
 
     def handle(self, *args, **options):
+        date_from = datetime.date.today() - datetime.timedelta(30)
+        date_to = datetime.date.today()
+
+        if options['date_from']:
+            date_from = datetime.datetime.strptime(options['date_from'], '%Y-%m-%d').date()
+
+        if options['date_to']:
+            date_to = datetime.datetime.strptime(options['date_to'], '%Y-%m-%d').date()
+
+        date_from_ant = date_from - datetime.timedelta(30)
+        date_to_ant = date_to - datetime.timedelta(30)
+
+        qs = DynaFormTracking.objects.all()\
+                .values('sender', 'object_form')\
+                .annotate(
+                    conversiones=models.Count(models.Case(models.When(pub_date__range=[date_from, date_to], then='object_form'))),
+                    conversiones_anterior=models.Count(models.Case(models.When(pub_date__range=[date_from_ant, date_to_ant], then='object_form')))
+                )
+
+        body = u"""
+        <h3>Conversiones de los últimos 30 d&iacute;as {0}-{1} vs {2}-{3}</h3>
+        <table><tbody>
+        <tr style="text-align:left">
+            <td width="50%">Landing</td>
+            <td>Conversiones</td>
+            <td>Mes anterior</td>
+        </tr>
+        """.format(date_from, date_to, date_from_ant, date_to_ant)
+
+        for row in qs:
+            body += (u"<tr>\
+                    <td>{landing}</td>\
+                    <td>{acumulado}</td>\
+                    <td>{acumulado_mes}</td>\
+                    </tr>".format(**{
+                        'landing': row['sender'],
+                        'acumulado': row['conversiones'],
+                        'acumulado_mes': row['conversiones_anterior']
+                        })
+                    )
+
+        body += "</tbody></table>"
+
+        ## muestra el plot
+        #import plotly.plotly as py
+        #import plotly.graph_objs as go
+
+        #py.sign_in('xavierlesa', 'ydflc9pcbc')
+        #senders = [i['sender'] for i in qs]
+
+        #trace1 = go.Bar(
+        #    x=senders,
+        #    y = [i['conversiones'] for i in qs],
+        #    name='Mes actual'
+        #)
+
+        #trace2 = go.Bar(
+        #    x = senders,
+        #    y = [i['conversiones_anterior'] for i in qs],
+        #    name='Mes anterior'
+        #)
+
+        #data = [trace1, trace2]
+        #layout = go.Layout(
+        #    barmode='group'
+        #)
+        #fig = go.Figure(data=data, layout=layout)
+        #plot_url = py.plot(fig, filename='reporte-worklift')
+
+        #body += "<br><br><table><tr><td><img src='{0}.png' title='Grafica comparativa anterior' alt='{0}.png' /></td></tr></table>".format(plot_url)
+
+        msg = EmailMultiAlternatives(options['subject'], body, 'xavier@link-b.com', [m for m in args])
+
+        msg.attach_alternative(body, "text/html")
+        msg.send()
 
 
+    def old_report(self, *args, **kwargs):
         #date_from = datetime.date.today() - datetime.timedelta(1)
         #date_to = datetime.date.today()
 
@@ -121,7 +201,9 @@ class Command(BaseCommand):
                             'acumulado_google': row.acumulado_google,
                             'acumulado_facebook': row.acumulado_facebook,
                             'acumulado_leadtotem': row.acumulado_leadtotem,
-                            'acumulado_unknow': row.acumulado_unknow})
+                            'acumulado_unknow': row.acumulado_unknow
+                            })
+                        )
 
         else:
             body = u"""
@@ -147,6 +229,7 @@ class Command(BaseCommand):
                             'acumulado_semana': row.acumulado_semana,
                             'acumulado_mes': row.acumulado_mes
                             })
+                        )
 
 
 

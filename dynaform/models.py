@@ -138,8 +138,12 @@ class DynaFormTracking(models.Model):
     site = models.ForeignKey(Site)
     lang = models.CharField(max_length=20, choices=settings.LANGUAGES, default=settings.LANGUAGE_CODE.lower())
     sender = models.CharField(max_length=200)
+    utm_source = models.CharField(max_length=200, blank=True, null=True)
+    utm_medium = models.CharField(max_length=200, blank=True, null=True)
+    utm_campaign = models.CharField(max_length=200, blank=True, null=True)
     data = JsonField()
     #data = HStoreField()
+    object_form = models.ForeignKey('DynaFormForm', blank=True, null=True)
     
 
     def __unicode__(self, *args, **kwargs):
