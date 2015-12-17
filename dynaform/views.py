@@ -7,16 +7,20 @@ try:
 except ImportError:
     from django.utils import simplejson as json
 
+import datetime
 from django.conf import settings
 from django.template import Context
 from django.http import HttpResponseRedirect, Http404, HttpResponse, \
         HttpResponseBadRequest
 from django.views.generic.detail import SingleObjectMixin
-from django.views.generic.base import View
+from django.views.generic import ListView, DetailView, View
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
-
-from dynaform.models import DynaFormForm, DynaFormField
+from django.db import models
+from dynaform.models import DynaFormForm, DynaFormField, DynaFormTracking
 from dynaform.forms.base import DynaFormClassForm
+
+import logging
+log = logging.getLogger(__name__)
 
 DYNAFORM_SESSION_KEY = getattr(settings, 'DYNAFORM_SESSION_KEY', 'DYNAFORM')
 
@@ -198,3 +202,67 @@ class DynaformChoicesRelatedFieldViewAJAX(JSONResponseMixin, View):
                     related_field.choices_queryset_label) or '%s' % obj
             ) for obj in qs ]
         })
+
+
+class DynaformReportListView(ListView):
+    template_name = 'dynaform/report_list.html'
+    model = DynaFormTracking
+
+    def get_queryset(self, *args, **kwargs):
+        qs = super(DynaformReportListView, self).get_queryset(*args, **kwargs)
+        date_from = datetime.date.today() - datetime.timedelta(30)
+        date_to = datetime.date.today()
+
+        options = self.request.GET
+
+        if options.get('date_from'):
+            date_from = datetime.datetime.strptime(options['date_from'], '%Y-%m-%d').date()
+
+        if options.get('date_to'):
+            date_to = datetime.datetime.strptime(options['date_to'], '%Y-%m-%d').date()
+
+        date_from_ant = date_from - datetime.timedelta(30)
+        date_to_ant = date_to - datetime.timedelta(30)
+
+        return qs.values('sender', 'object_form').annotate(
+                    conversiones=models.Count(models.Case(models.When(pub_date__range=[date_from, date_to], then='object_form'))),
+                    conversiones_anterior=models.Count(models.Case(models.When(pub_date__range=[date_from_ant, date_to_ant], then='object_form')))
+                )
+
+
+
+class DynaformReportDetailView(DetailView):
+    template_name = 'dynaform/report_detail.html'
+    model = DynaFormForm
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(DynaformReportDetailView, self).get_context_data(*args, **kwargs)
+
+        object = self.get_object()
+        log.debug("Obtiene el form {0}", object)
+
+        date_from = datetime.date.today() - datetime.timedelta(30)
+        date_to = datetime.date.today()
+
+        options = self.request.GET
+
+        if options.get('date_from'):
+            date_from = datetime.datetime.strptime(options['date_from'], '%Y-%m-%d').date()
+
+        if options.get('date_to'):
+            date_to = datetime.datetime.strptime(options['date_to'], '%Y-%m-%d').date()
+
+        date_from_ant = date_from - datetime.timedelta(30)
+        date_to_ant = date_to - datetime.timedelta(30)
+
+        qs = DynaFormTracking.objects.filter(object_form=object).extra({
+            'year': 'extract(year from pub_date)', 
+            'month': 'extract(month from pub_date)'
+            })\
+                    .values('year', 'month')\
+                    .annotate(conversiones=models.Count('id'))\
+                    .order_by('year', 'month')
+        
+
+        context['object_list'] = qs
+        return context

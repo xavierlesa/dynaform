@@ -1,0 +1,72 @@
+<!DOCTYPE HTML><html lang="en">
+    <head>
+    </head>
+    <body>
+        <div id="container" style="min-width: 400px; height: 400px; margin: 0 auto"></div>
+        <table id="datatable">
+            <thead>
+                <tr>
+                    <th>Form</th>
+                    <th>Conversiones</th>
+                    <th>Conversiones anterior</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for object in object_list %}
+                <tr>
+                    <td>{{ object.sender }}</td>
+                    <td>{{ object.conversiones|floatformat }}</td>
+                    <td>{{ object.conversiones_anterior|floatformat }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <script src="https://code.jquery.com/jquery-1.11.3.min.js" ></script>
+        <script src="https://code.highcharts.com/highcharts.js"></script>
+        <script src="https://code.highcharts.com/modules/exporting.js"></script>
+        <script>
+            $(function () {
+                $('#container').highcharts({
+                    chart: {
+                        type: 'column'
+                    },
+                    title: {
+                        text: 'Conversiones por form'
+                    },
+                    xAxis: {
+                        categories: [{% for object in object_list %}"{{ object.sender }}"{% if not forloop.last %},{% endif %}{% endfor %}]
+                    },
+                    yAxis: {
+                        allowDecimals: false,
+                        title: {
+                            text: 'Conversiones'
+                        }
+                    },
+                    plotOptions: {
+                        column: {
+                            grouping: false,
+                            shadow: false,
+                            borderWidth: 0
+                        }
+                    },
+                    series: [{
+                        name: 'Mes actual',
+                        color: 'rgba(248,161,63,1)',
+                        pointPadding: 0.3,
+                        pointPlacement: 0.2,
+                        data: [{% for object in object_list %}{{ object.conversiones|floatformat }}{% if not forloop.last %},{% endif %}{% endfor %}]
+                    },{
+                        name: 'Mes anterior',
+                        color: 'rgba(186,60,61,.9)',
+                        pointPadding: 0.4,
+                        pointPlacement: 0.2,
+                        data: [{% for object in object_list %}{{ object.conversiones_anterior|floatformat }}{% if not forloop.last %},{% endif %}{% endfor %}]
+                    }]
+
+                });
+            });
+        </script>
+
+    </body>
+</html>
