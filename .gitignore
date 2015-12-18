@@ -58,3 +58,6 @@ target/
 *.swp
 *.pyc
 .DS_Store
+
+# others
+dump.rdb
