@@ -178,9 +178,9 @@ $(function(){
             var custom_tarck_pageview = $form.data('track_pageview');
             var track_pageview = action || custom_tarck_pageview;
 
-            if(_gaq){
+            if(window._gaq){
                 _gaq.push(['_trackPageview', track_pageview]);
-            } else if(ga) {
+            } else if(window.ga) {
                 ga('send', 'pageview', track_pageview);
             }
         });
