@@ -239,7 +239,7 @@ class DynaformReportDetailView(DetailView):
         context = super(DynaformReportDetailView, self).get_context_data(*args, **kwargs)
 
         object = self.get_object()
-        log.debug("Obtiene el form {0}", object)
+        log.debug("Obtiene el form %s", object.name)
 
         date_from = datetime.date.today() - datetime.timedelta(30)
         date_to = datetime.date.today()

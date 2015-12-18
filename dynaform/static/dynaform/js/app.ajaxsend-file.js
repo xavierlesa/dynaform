@@ -1,7 +1,10 @@
 /*
  * Auto-attach ajax for forms
  *
- * usage:
+ * <form action="..." method="post" data-ajaxsend data-options="...">
+ * ...
+ * <input type="submit" name="submit" value="Send" />
+ * </form>
  *
  */
 
@@ -84,6 +87,7 @@ $(function(){
             form.find('input,textarea,select').attr('disabled', false);
         }
 
+        // capture submit
         $(this).on('submit', function(event){
             event.preventDefault();
             var $form = $(this);
@@ -164,6 +168,21 @@ $(function(){
             });
 
             return false;
+        });
+        
+        // tracking para google analytics
+        // on submit
+        $(this).on('done', function(event){
+            var $form = $(this);
+            var action = $form.attr('action') + '/submited/';
+            var custom_tarck_pageview = $form.data('track_pageview');
+            var track_pageview = action || custom_tarck_pageview;
+
+            if(_gaq){
+                _gaq.push(['_trackPageview', track_pageview]);
+            } else if(ga) {
+                ga('send', 'pageview', track_pageview);
+            }
         });
     });
 

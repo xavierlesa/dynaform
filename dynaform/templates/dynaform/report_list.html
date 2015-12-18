@@ -48,6 +48,23 @@
                             grouping: false,
                             shadow: false,
                             borderWidth: 0
+                        },
+                        series: {
+                            cursor: 'pointer',
+                            point: {
+                                events: {
+                                    click: function () {
+                                        alert('Category: ' + this.category + ', value: ' + this.y);
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    tooltip: {
+                        formatter: function () {
+                            return '<b>' + this.series.name + ':</b> ' + this.point.category + '<br/>'
+                                + '<b>Conversiones:</b> ' + this.point.y
+                                + '<a href="' + this.series.id + '">ver más</a>';
                         }
                     },
                     series: [{
