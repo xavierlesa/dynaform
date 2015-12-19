@@ -19,10 +19,23 @@ from django.db import models
 from dynaform.models import DynaFormForm, DynaFormField, DynaFormTracking
 from dynaform.forms.base import DynaFormClassForm
 
+from django.contrib.auth.decorators import login_required
+
 import logging
 log = logging.getLogger(__name__)
 
 DYNAFORM_SESSION_KEY = getattr(settings, 'DYNAFORM_SESSION_KEY', 'DYNAFORM')
+
+
+class LoginRequiredMixin(object):
+    @classmethod
+    def as_view(cls, **initkwargs):
+        view = super(LoginRequiredMixin, cls).as_view(**initkwargs)
+        return login_required(view)
+
+
+class PermissionRequiredMixin(LoginRequiredMixin):
+    pass
 
 
 class JSONResponseMixin(object):
@@ -204,7 +217,7 @@ class DynaformChoicesRelatedFieldViewAJAX(JSONResponseMixin, View):
         })
 
 
-class DynaformReportListView(ListView):
+class DynaformReportListView(PermissionRequiredMixin, ListView):
     template_name = 'dynaform/report_list.html'
     model = DynaFormTracking
 
@@ -224,14 +237,14 @@ class DynaformReportListView(ListView):
         date_from_ant = date_from - datetime.timedelta(30)
         date_to_ant = date_to - datetime.timedelta(30)
 
-        return qs.values('sender', 'object_form').annotate(
+        return qs.values('sender', 'object_form', 'object_form_id').annotate(
                     conversiones=models.Count(models.Case(models.When(pub_date__range=[date_from, date_to], then='object_form'))),
                     conversiones_anterior=models.Count(models.Case(models.When(pub_date__range=[date_from_ant, date_to_ant], then='object_form')))
                 )
 
 
 
-class DynaformReportDetailView(DetailView):
+class DynaformReportDetailView(PermissionRequiredMixin, DetailView):
     template_name = 'dynaform/report_detail.html'
     model = DynaFormForm
 

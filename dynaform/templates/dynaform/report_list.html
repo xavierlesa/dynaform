@@ -1,5 +1,6 @@
 <!DOCTYPE HTML><html lang="en">
     <head>
+        <title>Reporte de Conversiones</title>
     </head>
     <body>
         <div id="container" style="min-width: 400px; height: 400px; margin: 0 auto"></div>
@@ -54,7 +55,7 @@
                             point: {
                                 events: {
                                     click: function () {
-                                        alert('Category: ' + this.category + ', value: ' + this.y);
+                                        window.location.href = this.url;
                                     }
                                 }
                             }
@@ -63,7 +64,7 @@
                     tooltip: {
                         formatter: function () {
                             return '<b>' + this.series.name + ':</b> ' + this.point.category + '<br/>'
-                                + '<b>Conversiones:</b> ' + this.point.y
+                                + '<b>Conversiones:</b> ' + this.point.y + '<br/>'
                                 + '<a href="' + this.series.id + '">ver más</a>';
                         }
                     },
@@ -72,13 +73,13 @@
                         color: 'rgba(248,161,63,1)',
                         pointPadding: 0.3,
                         pointPlacement: 0.2,
-                        data: [{% for object in object_list %}{{ object.conversiones|floatformat }}{% if not forloop.last %},{% endif %}{% endfor %}]
+                        data: [{% for object in object_list %}{name: "{{ object.sender }}", y: {{ object.conversiones|floatformat }}, url: "{% url 'dynaform_report' object.object_form_id %}"}{% if not forloop.last %},{% endif %}{% endfor %}]
                     },{
                         name: 'Mes anterior',
                         color: 'rgba(186,60,61,.9)',
                         pointPadding: 0.4,
                         pointPlacement: 0.2,
-                        data: [{% for object in object_list %}{{ object.conversiones_anterior|floatformat }}{% if not forloop.last %},{% endif %}{% endfor %}]
+                        data: [{% for object in object_list %}{name: "{{ object.sender }}", y: {{ object.conversiones_anterior|floatformat }}, url: "{% url 'dynaform_report' object.object_form_id %}"}{% if not forloop.last %},{% endif %}{% endfor %}]
                     }]
 
                 });
