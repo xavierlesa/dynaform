@@ -164,7 +164,7 @@ class DynaFormClassForm(forms.Form):
                 field_args.update({'widget': forms.HiddenInput})
 
             if field.field_widget:
-                attrs = {'placeholder': field.field_help or field.field_label}
+                attrs = {'placeholder': field.field_help or field.field_label, 'required': field.is_required}
                 try:
                     widget = getattr(forms, field.field_widget)(attrs=attrs)
                 except AttributeError:
