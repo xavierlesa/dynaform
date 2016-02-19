@@ -186,4 +186,20 @@ $(function(){
         });
     });
 
+    if (window.ga || window._gaq) {
+      $("form").each(function() {
+        var $form = $(this);
+
+        var formName = $(this).attr('name') || $(this).attr('id');
+        
+        $('input, textarea, select', $form).on('blur', function() {
+          var fieldName = $(this).attr('name');
+          if(window._gaq){
+            _gaq.push(['_trackEvent', formName, 'completed', fieldName]);
+          } else if(window.ga) {
+            ga('send', 'event', formName, 'completed', fieldName);
+          }
+        });
+      });
+    }
 });
