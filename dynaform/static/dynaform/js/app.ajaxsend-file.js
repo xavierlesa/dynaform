@@ -186,6 +186,8 @@ $(function(){
         });
     });
 
+    /* Tracking para campos de formularios DEPRECADO -> hotjar */
+    /*
     if (window.ga || window._gaq) {
       $("form").each(function() {
         var $form = $(this);
@@ -202,4 +204,5 @@ $(function(){
         });
       });
     }
+    */
 });
