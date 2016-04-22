@@ -119,11 +119,10 @@ $(function(){
                 }
             }
 
-            var xhr = $.ajax({
+            var xhrConfig = {
                 type: 'POST',
                 url: $form.attr('action'),
                 data: formData,
-                dataType: 'json',
                 global: false,
                 cache: false,
                 //contentType: false, /* bug? no termina de procesar los datos la vista de django y POST viaja vacio */
@@ -139,7 +138,16 @@ $(function(){
                         jqXHR.setRequestHeader("X-CSRFToken", csrftoken);
                     }
                 }
-            });
+            };
+
+            if(!filesInput.length){
+                xhrConfig.dataType = 'json';
+            } else {
+                //xhrConfig.contentType = 'multipart/form-data';
+                xhrConfig.contentType = false;
+            }
+
+            var xhr = $.ajax(xhrConfig);
 
             xhr.always(function(response){
                 $form.find('.loading').hide();
