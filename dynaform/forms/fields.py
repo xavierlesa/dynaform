@@ -2,6 +2,9 @@
 import json
 from django import forms
 from dynaform.forms import widgets as custom_widgets
+from django.core.validators import MaxValueValidator
+
+max_value_validator = MaxValueValidator(0)
 
 # Try importing ReCaptchaField
 try:
@@ -28,5 +31,5 @@ class CheckOtherField(forms.fields.MultiValueField):
     def compress(self, values):
         return json.dumps(values)
 
-
-
+class LinkbCaptchaField(forms.fields.CharField):
+    default_validators = [max_value_validator]
