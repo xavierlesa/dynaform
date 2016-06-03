@@ -472,9 +472,9 @@ class DynaFormClassForm(forms.Form):
                     }
             }
 
-        response = self.feed_totemlead(self.object_form.name[:200], [qs])
-        log.debug("feed_totemlead response")
-        log.debug(response)
+        #response = self.feed_totemlead(self.object_form.name[:200], [qs])
+        #log.debug("feed_totemlead response")
+        #log.debug(response)
 
 
     def get_client_ip(self, request):
