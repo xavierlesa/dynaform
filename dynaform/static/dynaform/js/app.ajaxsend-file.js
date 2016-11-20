@@ -119,11 +119,10 @@ $(function(){
                 }
             }
 
-            var xhr = $.ajax({
+            var xhrConfig = {
                 type: 'POST',
                 url: $form.attr('action'),
                 data: formData,
-                dataType: 'json',
                 global: false,
                 cache: false,
                 //contentType: false, /* bug? no termina de procesar los datos la vista de django y POST viaja vacio */
@@ -139,7 +138,16 @@ $(function(){
                         jqXHR.setRequestHeader("X-CSRFToken", csrftoken);
                     }
                 }
-            });
+            };
+
+            if(!filesInput.length){
+                xhrConfig.dataType = 'json';
+            } else {
+                //xhrConfig.contentType = 'multipart/form-data';
+                xhrConfig.contentType = false;
+            }
+
+            var xhr = $.ajax(xhrConfig);
 
             xhr.always(function(response){
                 $form.find('.loading').hide();
@@ -186,4 +194,23 @@ $(function(){
         });
     });
 
+    /* Tracking para campos de formularios DEPRECADO -> hotjar */
+    /*
+    if (window.ga || window._gaq) {
+      $("form").each(function() {
+        var $form = $(this);
+
+        var formName = $(this).attr('name') || $(this).attr('id');
+        
+        $('input, textarea, select', $form).on('blur', function() {
+          var fieldName = $(this).attr('name');
+          if(window._gaq){
+            _gaq.push(['_trackEvent', formName, 'completed', fieldName]);
+          } else if(window.ga) {
+            ga('send', 'event', formName, 'completed', fieldName);
+          }
+        });
+      });
+    }
+    */
 });
