@@ -28,7 +28,7 @@ class JsonField(models.Field):
     """ 
     JSON Field 
     """
-    __metaclass__ = models.SubfieldBase
+    #__metaclass__ = models.SubfieldBase
 
     serialize_to_string = True
 
