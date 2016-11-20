@@ -1,0 +1,35 @@
+<table>
+    <tr>
+        <td style="font-size:16px;font-weight:700;">Conversiones por fuentes acumulado en el mes</td>
+    </tr>
+</table>
+<table>
+    <tbody>
+        <tr style="text-align:left">
+            <td style="padding:8px;text-align:left;background:#56C895;color:#fff;font-size:12px;">ID</td>
+            <td style="padding:8px;text-align:left;background:#56C895;color:#fff;font-size:12px;">Landing</td>
+            <td style="padding:8px;text-align:left;background:#56C895;color:#fff;font-size:12px;">Google</td>
+            <td style="padding:8px;text-align:left;background:#56C895;color:#fff;font-size:12px;">Facebook</td>
+            <td style="padding:8px;text-align:left;background:#56C895;color:#fff;font-size:12px;">LeadTotem</td>
+            <td style="padding:8px;text-align:left;background:#56C895;color:#fff;font-size:12px;">Desconocido</td>
+            <td style="padding:8px;text-align:left;background:#56C895;color:#fff;font-size:12px;">D&iacute;a</td>
+            <td style="padding:8px;text-align:left;background:#56C895;color:#fff;font-size:12px;">Anterior</td>
+            <td style="padding:8px;text-align:left;background:#56C895;color:#fff;font-size:12px;">Semana</td>
+            <td style="padding:8px;text-align:left;background:#56C895;color:#fff;font-size:12px;">Mes</td>
+        </tr>
+        {% for object in object_list %}
+        <tr>
+            <td style="padding:8px;text-align:left;background:#f0f0f0;color:#333;font-size:12px;">{% if object.object_form_id %}<a href="http://{{ site.domain }}/admin/dynaform/dynaformform/{{ object.object_form_id }}/">{{ object.object_form_id }}</a>{% else %}{{ object.object_form_id }}{% endif %}</td>
+            <td style="padding:8px;text-align:left;background:#f0f0f0;color:#333;font-size:12px;">{{ object.form_name }}</td>
+            <td style="padding:8px;text-align:center;background:#f0f0f0;color:#333;font-size:12px;">{{ object.acumulado_google }}</td>
+            <td style="padding:8px;text-align:center;background:#f0f0f0;color:#333;font-size:12px;">{{ object.acumulado_facebook }}</td>
+            <td style="padding:8px;text-align:center;background:#f0f0f0;color:#333;font-size:12px;">{{ object.acumulado_leadtotem }}</td>
+            <td style="padding:8px;text-align:center;background:#f0f0f0;color:#333;font-size:12px;">{{ object.acumulado_unknow }}</td>
+            <td style="padding:8px;text-align:center;background:{% if object.acumulado_dia < 1 %}#FF675F;color:#fff{% elif object.acumulado_dia > object.acumulado_dia_anterior %}#56C895;color:#fff;{% else %}#f0f0f0;color:#333{% endif %};font-size:12px;">{{ object.acumulado_dia }}{% if object.acumulado_dia > object.acumulado_dia_anterior %} <span style="font-size:12px">({% widthratio object.acumulado_dia object.acumulado_dia_anterior 100 %}%)</span>{% endif%}</td>
+            <td style="padding:8px;text-align:center;background:{% if object.acumulado_dia_anterior < 1 %}#FF675F;color:#fff{% else %}#f0f0f0;color:#333{% endif %};font-size:12px;">{{ object.acumulado_dia_anterior }}</td>
+            <td style="padding:8px;text-align:center;background:#f0f0f0;color:#333;font-size:12px;">{{ object.acumulado_semana }}</td>
+            <td style="padding:8px;text-align:center;background:#f0f0f0;color:#333;font-size:12px;">{{ object.acumulado_mes }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

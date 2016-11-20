@@ -3,6 +3,7 @@
 import datetime
 from optparse import make_option
 from django.core.management.base import BaseCommand, CommandError
+from django.template.loader import render_to_string
 
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
@@ -48,8 +49,9 @@ class Command(BaseCommand):
 
 
     def handle(self, *args, **options):
-        date_from = datetime.date.today() - datetime.timedelta(30)
-        date_to = datetime.date.today()
+        date_offset = datetime.timedelta(31)
+        date_from = datetime.date.today() - date_offset
+        date_to = datetime.date.today() - datetime.timedelta(1)
 
         if options['date_from']:
             date_from = datetime.datetime.strptime(options['date_from'], '%Y-%m-%d').date()
@@ -57,8 +59,8 @@ class Command(BaseCommand):
         if options['date_to']:
             date_to = datetime.datetime.strptime(options['date_to'], '%Y-%m-%d').date()
 
-        date_from_ant = date_from - datetime.timedelta(30)
-        date_to_ant = date_to - datetime.timedelta(30)
+        date_from_ant = date_from - date_offset
+        date_to_ant = date_to - datetime.timedelta(1)
 
         qs = DynaFormTracking.objects.all()\
                 .values('sender', 'object_form')\
@@ -67,6 +69,7 @@ class Command(BaseCommand):
                     conversiones_anterior=models.Count(models.Case(models.When(pub_date__range=[date_from_ant, date_to_ant], then='object_form')))
                 )
 
+        html = render_to_string("dynaform/report_template.html", dict(object_list=qs, site=current_site))
         body = u"""
         <h3>Conversiones de los últimos 30 d&iacute;as {0}-{1} vs {2}-{3}</h3>
         <table><tbody>
