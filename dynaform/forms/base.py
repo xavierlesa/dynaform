@@ -14,10 +14,10 @@ from django.contrib.contenttypes.models import ContentType
 from django.template import Context, Template, RequestContext
 from django.forms import extras
 from django.utils.encoding import force_unicode
-from django.core.mail import EmailMultiAlternatives
+from django.core.mail import EmailMultiAlternatives, get_connection
 from django.core.urlresolvers import reverse
 
-from dynaform.models import DynaFormTracking
+from dynaform.models import DynaFormTracking, DynaFormRecipientList
 from dynaform.forms import widgets as dynaform_widgets
 from dynaform.forms import fields as dynaform_fields
 
@@ -359,6 +359,45 @@ class DynaFormClassForm(forms.Form):
 
 
     def save(self, *args, **kwargs):
+        # DEPRECATED
+        ######################################################################
+        # Nuevo, envia mail solo si esta activo
+        ######################################################################
+        #if self.object_form.send_email:
+        #    attach_list = []
+
+        #    if self.is_multipart():
+        #        file_fields = self.request.FILES.keys()
+
+        #        for filename in file_fields:
+        #            self.handle_uploaded_file(self.request.FILES[filename], filename)
+        #            attach_list.append(dict(
+        #                    filename=self.file_fields[filename]['filename'], 
+        #                    content=self.file_fields[filename]['file'], 
+        #                    mimetype=mimetypes.guess_type(self.file_fields[filename]['file'])[0]
+        #                ))
+        #        
+        #    subject_template = Template(self.object_form.subject_template.html)
+        #    body_template = Template(self.object_form.body_template.html)
+
+        #    subject = subject_template.render(self.get_context())
+        #    body = body_template.render(self.get_context())
+
+        #    if self.object_form.body_template.is_plain:
+        #        msg = EmailMultiAlternatives(subject, safe(body), self.object_form.from_email, self.get_recipient_list(), get_recipient_list([]))
+        #    else:
+        #        msg = EmailMultiAlternatives(subject, escape(body), self.object_form.from_email, self.get_recipient_list(), get_recipient_list([]))
+        #        msg.attach_alternative(body, "text/html")
+
+        #    if attach_list:
+        #        for attach in attach_list:
+        #            msg.attach_file(attach['content'], attach['mimetype'])
+
+        #    msg.send()
+        #    log.info("Email sent")
+
+
+        # NEW 2.0.1
         ######################################################################
         # Nuevo, envia mail solo si esta activo
         ######################################################################
@@ -375,25 +414,16 @@ class DynaFormClassForm(forms.Form):
                             content=self.file_fields[filename]['file'], 
                             mimetype=mimetypes.guess_type(self.file_fields[filename]['file'])[0]
                         ))
-                
-            subject_template = Template(self.object_form.subject_template.html)
-            body_template = Template(self.object_form.body_template.html)
 
-            subject = subject_template.render(self.get_context())
-            body = body_template.render(self.get_context())
+            # ENVIA LA LISTA DE MAILS
+            connection = get_connection()
+            connection.open()
 
-            if self.object_form.body_template.is_plain:
-                msg = EmailMultiAlternatives(subject, safe(body), self.object_form.from_email, self.get_recipient_list(), get_recipient_list([]))
-            else:
-                msg = EmailMultiAlternatives(subject, escape(body), self.object_form.from_email, self.get_recipient_list(), get_recipient_list([]))
-                msg.attach_alternative(body, "text/html")
+            DynaFormRecipientList.send_to_recipient_list(self.object_form, 
+                    self.get_context(), attach_list, connection=connection)
 
-            if attach_list:
-                for attach in attach_list:
-                    msg.attach_file(attach['content'], attach['mimetype'])
+            connection.close()
 
-            msg.send()
-            log.info("Email sent")
 
         ######################################################################
         # Nuevo, envia autorespondedor

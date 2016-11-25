@@ -1,17 +1,22 @@
 # *-* coding=utf-8 *-*
 
 import StringIO
-from django.db import models
 from django import forms
-from django.contrib.sites.models import Site
 from django.conf import settings
+from django.db import models
+from django.db.models import Q
+from django.contrib.sites.models import Site
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
+from django.core.serializers.json import DjangoJSONEncoder
+
+from django.template import Context, Template, RequestContext
+from django.template.defaultfilters import slugify, force_escape, escape, safe
+
 from django.utils import translation
 from django.utils.translation import ugettext_lazy as _
-from django.core.serializers.json import DjangoJSONEncoder
-from django.contrib.contenttypes.models import ContentType
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.template.defaultfilters import slugify 
 from django.utils.encoding import force_unicode
+
 #from djblog.common.models import MultiSiteBaseModel, GenericRelationModel
 from dynaform.forms.widgets import DYNAFORM_FIELDS, DYNAFORM_WIDGETS
 #from django.contrib.postgres.fields import HStoreField
@@ -225,16 +230,39 @@ class DynaFormField(GenericRelationModel):
 
 
 
+@python_2_unicode_compatible
 class DynaFormTemplate(MultiSiteBaseModel):
     """
     Templates for dinamic forms for subject, body and form itself
     """
+
+    TEMPLATE_TYPES_SUBJECT = "subject"
+    TEMPLATE_TYPES_BODY = "body"
+    TEMPLATE_TYPES_FORM = "form"
+
+    DYNAFORM_TEMPLATE_TYPES = (
+            (TEMPLATE_TYPES_SUBJECT, 'Email Subject'),
+            (TEMPLATE_TYPES_BODY, 'Email Body'),
+            (TEMPLATE_TYPES_FORM, 'Form Template'),
+        )
+
     multisite_unique_together = ('slug',)
+
+    template_type = models.CharField(_(u"Tipo de template"), max_length=100, 
+            choices=DYNAFORM_TEMPLATE_TYPES, default=TEMPLATE_TYPES_FORM)
 
     name = models.CharField(_(u"Nombre del template"), max_length=100, help_text=_(u"ej: Subject Contacto"))
     slug = models.SlugField(max_length=100)
     html = models.TextField(_(u"HTML del Template"), help_text=_(u"parsea del contexto, y templatetags"))
-    is_plain = models.BooleanField(default=True)
+
+    is_plain = models.BooleanField(choices=[
+        (True, 'Texto Plano'),
+        (False, 'HTML')
+        ], default=True)
+
+    def __str__(self):
+        return u"{name}".format(**self.__dict__)
+
 
     def __unicode__(self):
         return unicode(self.name)
@@ -351,3 +379,156 @@ class DynaFormForm(MultiSiteBaseModel):
                     )
 
             field_clone.save()
+
+
+@python_2_unicode_compatible
+class DynaFormRecipientList(MultiSiteBaseModel):
+
+    ALTERNATE_SEND_ALWAYS = 'ALWAYS' # envia siempre
+    ALTERNATE_SEND_AUTO = 'AUTO' # alterna entre todos
+    ALTERNATE_SEND_IF = 'IF' # envia si se cumple una condición
+
+    ALTERNATE_SEND_CHOICES = [
+                (ALTERNATE_SEND_ALWAYS, u"Enviar siempre"),
+                (ALTERNATE_SEND_AUTO, u"Alternar (automático)"),
+                (ALTERNATE_SEND_IF, u"Si cumple la condición"),
+            ]
+
+    object_form = models.ForeignKey('DynaFormForm')
+
+    name = models.CharField(_(u"Nombre"), max_length=100)
+    email = models.EmailField(_(u"Email"))
+
+    alternate_send = models.CharField(_(u"Enviar/Alternar"), max_length=100, 
+            choices=ALTERNATE_SEND_CHOICES, default=ALTERNATE_SEND_ALWAYS)
+
+    alternate_condition = models.CharField(_(u"Condicional"), max_length=200, 
+            blank=True, null=True, 
+            help_text=_(u"Se pueden usar variables del contexto {{ object }}, \
+                    {{ sites }}, etc. Ej: "))
+
+    alternate_index = models.PositiveIntegerField(default=0, 
+            choices=[(i, i) for i in range(0, 10)])
+
+    subject_template = models.ForeignKey(DynaFormTemplate, 
+            related_name="dynaformrecipient_subject_template_related",
+            limit_choices_to={
+                'template_type': DynaFormTemplate.TEMPLATE_TYPES_SUBJECT
+                },
+            blank=True, null=True
+            )
+
+    body_template = models.ForeignKey(DynaFormTemplate,
+            related_name="dynaformrecipient_body_template_related",
+            limit_choices_to={
+                'template_type': DynaFormTemplate.TEMPLATE_TYPES_BODY
+                },
+            blank=True, null=True 
+            )
+
+    class Meta:
+        ordering = ('alternate_send', 'alternate_index')
+
+    def __str__(self):
+        return u"{name} <{email}>".format(**self.__dict__)
+
+
+    @classmethod    
+    def send_to_recipient_list(cls, object_form, context, attachment=[], **kwargs):
+        """
+        Crea y ordena la lista de destinatarios
+
+        """
+
+        recipient_list = cls.objects.filter( 
+                Q(alternate_send=cls.ALTERNATE_SEND_ALWAYS) | 
+                Q(alternate_send=cls.ALTERNATE_SEND_AUTO, alternate_index=0),
+                object_form=object_form)
+
+        for recipient in recipient_list:
+            if not settings.DEBUG:
+                recipient.send_email(context, attachment, **kwargs)
+            log.info("[%s] Envia el mail al destinatario %s", recipient.alternate_send, recipient.email)
+
+        # Si cumple con la condicion campo [==,<,>,!=,<=,>=] campo/valor [AND, OR, NOT]
+        def alternate_condition_match(value, context):
+            template = Template("{% if " + str(value) + "%}1{% endif %}")
+            return template.render(Context(context)) == u'1'
+
+        recipient_list = cls.objects.filter(object_form=object_form, alternate_send=cls.ALTERNATE_SEND_IF)
+
+        for recipient in recipient_list:
+            if alternate_condition_match(recipient.alternate_condition, context):
+                if not settings.DEBUG:
+                    recipient.send_email(context, attachment, **kwargs)
+                log.info("Se cumple la condicion \"%s\", [%s] Envia el mail al destinatario %s", 
+                        recipient.alternate_condition, recipient.alternate_send, recipient.email)
+
+        log.debug("shift alternate")
+        cls.shift_alternate(object_form)
+
+
+    def send_email(self, context, attachment=[], **kwargs):
+        """
+        Atajo para crear el mail completo, crea una instancia de 
+        EmailMultiAlternatives y luego es enviada
+        
+        Luego para mejorar la performance de envios lo mejor es usar la misma 
+        conexión al SMTP
+
+        """
+
+        connection = kwargs.get('connection')
+
+        context['recipient'] = self
+
+        subject = (self.subject_template or self.object_form.subject_template).render(context)
+        body = (self.body_template or self.object_form.body_template).render(context)
+        _template = (self.body_template or self.object_form.body_template)
+
+        if _template.is_plain:
+            msg = EmailMultiAlternatives(subject, safe(body), 
+                    self.object_form.from_email, [self.email], 
+                    connection=connection)
+        else:
+            msg = EmailMultiAlternatives(subject, escape(body), 
+                    self.object_form.from_email, [self.email], 
+                    connection=connection)
+            msg.attach_alternative(body, "text/html")
+
+        if attachment:
+            for attach in attach_list:
+                msg.attach_file(attach['content'], attach['mimetype'])
+
+        msg.send()
+
+    @classmethod
+    def shift_alternate(cls, object_form):
+
+        qs = cls.objects.filter(object_form=object_form, 
+                alternate_send=cls.ALTERNATE_SEND_AUTO)
+
+        recipient_list = qs.values('alternate_index')\
+                .annotate(models.Max('alternate_index'))\
+                .order_by('-alternate_index')
+
+        total_recipient = len(recipient_list)
+        
+        for i, recipient in enumerate(recipient_list):
+
+            recipient['alternate_index__max']
+
+            srr = recipient['alternate_index__max']
+            srl = srr + 1
+
+            if i == 0:
+                srl = total_recipient + 1
+
+            log.debug("Shift register %s -> %s" , srr, srl)
+            qs.filter(alternate_index=srr).update(alternate_index=srl)
+
+        srr = total_recipient + 1
+        srl = 0
+        log.debug("Shift register %s -> %s" , srr, srl)
+        qs.filter(alternate_index=srr).update(alternate_index=srl)
+
