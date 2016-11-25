@@ -62,12 +62,10 @@ class DynaFormRecipientListInline(admin.StackedInline):
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name in ["subject_template", "autorespond_subject_template"]:
-            kwargs["queryset"] = DynaFormTemplate.objects.filter(user=request.user,
-                    template_type=DynaFormTemplate.TEMPLATE_TYPES_SUBJECT)
+            kwargs["queryset"] = DynaFormTemplate.objects.filter(template_type=DynaFormTemplate.TEMPLATE_TYPES_SUBJECT)
 
         if db_field.name in ["body_template", "autorespond_body_template"]:
-            kwargs["queryset"] = DynaFormTemplate.objects.filter(user=request.user,
-                    template_type=DynaFormTemplate.TEMPLATE_TYPES_BODY)
+            kwargs["queryset"] = DynaFormTemplate.objects.filter(template_type=DynaFormTemplate.TEMPLATE_TYPES_BODY)
 
         return super(DynaFormRecipientListInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
