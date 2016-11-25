@@ -27,7 +27,7 @@ except ImportError:
     from django.utils import simplejson as json
 
 import logging
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 class JsonField(models.Field):
     """ 
@@ -83,7 +83,7 @@ class MultiSiteBaseManager(models.Manager):
         if 'django.middleware.locale.LocaleMiddleware' in getattr(settings, 'MIDDLEWARE_CLASSES', []):
             return qs.filter(models.Q(lang__iexact=translation.get_language()) | models.Q(lang__exact=''))
         else:
-            logger.warning('NO get for lang %s', translation.get_language())
+            log.warning('NO get for lang %s', translation.get_language())
         return qs
 
     def get_for_site_or_none(self, *args, **kwargs):
