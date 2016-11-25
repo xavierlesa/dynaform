@@ -15,7 +15,7 @@ from django.template.defaultfilters import slugify, force_escape, escape, safe
 
 from django.utils import translation
 from django.utils.translation import ugettext_lazy as _
-from django.utils.encoding import force_unicode
+from django.utils.encoding import force_unicode, python_2_unicode_compatible
 
 #from djblog.common.models import MultiSiteBaseModel, GenericRelationModel
 from dynaform.forms.widgets import DYNAFORM_FIELDS, DYNAFORM_WIDGETS
