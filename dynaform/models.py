@@ -277,7 +277,7 @@ class DynaFormTemplate(MultiSiteBaseModel):
         return Template(self.html)
 
     def render(self, context):
-        return self.get_template().render(self.get_template(context))
+        return self.get_template().render(context)
 
 
 class DynaFormForm(MultiSiteBaseModel):
