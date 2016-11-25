@@ -486,6 +486,9 @@ class DynaFormRecipientList(MultiSiteBaseModel):
         body = (self.body_template or self.object_form.body_template).render(context)
         _template = (self.body_template or self.object_form.body_template)
 
+        log.debug("Envia el mail:\r\n=====================\r\n\r\nFrom: %s\r\nTo: %s\r\n%s\r\n%s", 
+                self.object_form.from_email, [self.email], subject, body)
+
         if _template.is_plain:
             msg = EmailMultiAlternatives(subject, safe(body), 
                     self.object_form.from_email, [self.email], 

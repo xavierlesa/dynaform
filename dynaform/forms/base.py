@@ -270,7 +270,7 @@ class DynaFormClassForm(forms.Form):
                 return self.context
 
             self.context.update({'object': obj})
-            print "update object con", obj
+            log.debug("update object con %s", obj)
 
         return self.context
 
