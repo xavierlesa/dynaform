@@ -292,11 +292,26 @@ class DynaFormForm(MultiSiteBaseModel):
     ##########################################################################
     send_email = models.BooleanField(_("Enviar mail"), default=True)
     from_email = models.CharField(max_length=100, default=settings.DEFAULT_FROM_EMAIL, blank=True)
-    recipient_list = models.TextField(_(u"Lista de destinatarios"), default=settings.MANAGERS, blank=True,
-            help_text=_(u"ej: lista separada por líneas y coma.<br>Juan Pérez, juanperez@dominio.com<br>Maria Gomez, mariagomez@dominio.com"))
+    
+    # DEPRECATED
+    #recipient_list = models.TextField(_(u"Lista de destinatarios"), default=settings.MANAGERS, blank=True,
+    #        help_text=_(u"ej: lista separada por líneas y coma.<br>Juan Pérez, juanperez@dominio.com<br>Maria Gomez, mariagomez@dominio.com"))
 
-    subject_template = models.ForeignKey(DynaFormTemplate, blank=True, null=True, related_name="dynaform_subject_template_related")
-    body_template = models.ForeignKey(DynaFormTemplate, blank=True, null=True, related_name="dynaform_body_template_related")
+    subject_template = models.ForeignKey(DynaFormTemplate, 
+            related_name="dynaform_subject_template_related",
+            limit_choices_to={
+                'template_type': DynaFormTemplate.TEMPLATE_TYPES_SUBJECT
+                },
+            blank=True, null=True
+            )
+    body_template = models.ForeignKey(DynaFormTemplate,
+            related_name="dynaform_body_template_related",
+            limit_choices_to={
+                'template_type': DynaFormTemplate.TEMPLATE_TYPES_BODY
+                },
+            blank=True, null=True 
+            )
+
     error_class = models.CharField(_(u"Clase CSS para error"), max_length=40, default="error")
     required_css_class = models.CharField(_(u"Clase CSS para requerido"), max_length=40, default="required")
 
@@ -339,7 +354,7 @@ class DynaFormForm(MultiSiteBaseModel):
                 form_template = self.form_template,
                 send_email = self.send_email,
                 from_email = self.from_email,
-                recipient_list = self.recipient_list,
+                #recipient_list = self.recipient_list,
                 subject_template = self.subject_template,
                 body_template = self.body_template,
                 error_class = self.error_class,
