@@ -273,6 +273,12 @@ class DynaFormTemplate(MultiSiteBaseModel):
 
         super(DynaFormTemplate, self).save(*args, **kwargs)
 
+    def get_template(self):
+        return Template(self.html)
+
+    def render(self, context):
+        return self.get_template().render(self.get_template(context))
+
 
 class DynaFormForm(MultiSiteBaseModel):
     """
