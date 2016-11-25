@@ -6,7 +6,7 @@ from django.db import models
 from django.contrib import admin
 from django.contrib.contenttypes.admin import GenericStackedInline
 from django.http import HttpResponse
-from models import DynaFormTracking, DynaFormField, DynaFormTemplate, DynaFormForm
+from models import DynaFormTracking, DynaFormField, DynaFormTemplate, DynaFormForm, DynaFormRecipientList
 from dummy_form import DummyTextInput
 
 class JSON2CSV(object):
@@ -42,6 +42,34 @@ class JSON2CSV(object):
             csv['header'] = set(csv['header']).union(header)
 
         return csv
+
+
+class DynaFormRecipientListInline(admin.StackedInline):
+    model = DynaFormRecipientList
+    #ct_field = 'content_type'
+    #ct_fk_field = 'object_pk'
+    extra = 1
+    fieldsets = (
+        (None, {
+            'fields': (
+                ('name', 'email'), 
+                ('alternate_send', 'alternate_index'), 
+                'alternate_condition',
+                ('subject_template', 'body_template'),
+            ),
+        }),
+    )
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name in ["subject_template", "autorespond_subject_template"]:
+            kwargs["queryset"] = DynaFormTemplate.objects.filter(user=request.user,
+                    template_type=DynaFormTemplate.TEMPLATE_TYPES_SUBJECT)
+
+        if db_field.name in ["body_template", "autorespond_body_template"]:
+            kwargs["queryset"] = DynaFormTemplate.objects.filter(user=request.user,
+                    template_type=DynaFormTemplate.TEMPLATE_TYPES_BODY)
+
+        return super(DynaFormRecipientListInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class DynaFormFieldInline(GenericStackedInline):
@@ -93,7 +121,7 @@ class DynaFormTemplateAdmin(admin.ModelAdmin):
 
 class DynaFormFormAdmin(admin.ModelAdmin):
     list_display = ('slug', 'name', 'id')
-    inlines = [DynaFormFieldInline, ]
+    inlines = [DynaFormRecipientListInline, DynaFormFieldInline]
     prepopulated_fields = {'slug': ('name',), 'form_title': ('name',)}
     fieldsets = (
         (None, {
@@ -115,8 +143,9 @@ class DynaFormFormAdmin(admin.ModelAdmin):
 
         ('Send Email', {
             'fields': (
-                ('send_email', 'from_email'), 
-                'recipient_list',
+                'send_email', 
+                'from_email',
+                #'recipient_list',
                 ('subject_template', 'body_template',),
             ),
             'classes': ('collapse',)
